@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Credit Card Fraud Detection</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    header p {
+      color: #94a3b8;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 860px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .sample-btns {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .sample-btns button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .sample-btns button:hover { opacity: 0.85; }
+    #btn-normal { background: #22c55e; color: #fff; }
+    #btn-fraud  { background: #ef4444; color: #fff; }
+    #btn-clear  { background: #475569; color: #fff; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .field input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #f1f5f9;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: #6366f1; }
+
+    #predict-btn {
+      width: 100%;
+      padding: 14px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #predict-btn:hover { background: #4f46e5; }
+    #predict-btn:disabled { background: #334155; cursor: not-allowed; }
+
+    #result {
+      margin-top: 24px;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      display: none;
+    }
+    #result.fraud    { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; }
+    #result.legit    { background: rgba(34,197,94,0.15);  border: 1px solid #22c55e; }
+
+    #result .verdict {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    #result.fraud .verdict { color: #ef4444; }
+    #result.legit .verdict { color: #22c55e; }
+
+    #result .prob {
+      font-size: 1rem;
+      color: #cbd5e1;
+    }
+
+    .bar-wrap {
+      margin-top: 16px;
+      background: #0f172a;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    #result.fraud .bar-fill { background: #ef4444; }
+    #result.legit .bar-fill { background: #22c55e; }
+
+    .spinner {
+      display: none;
+      width: 22px; height: 22px;
+      border: 3px solid #334155;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 Credit Card Fraud Detection</h1>
+  <p>Random Forest model · 92% accuracy · Trained on 984 transactions</p>
+</header>
+
+<div class="card">
+  <div class="sample-btns">
+    <button id="btn-normal" onclick="loadSample('normal')">Load Normal Transaction</button>
+    <button id="btn-fraud"  onclick="loadSample('fraud')">Load Fraud Transaction</button>
+    <button id="btn-clear"  onclick="clearForm()">Clear</button>
+  </div>
+
+  <div class="grid" id="fields"></div>
+
+  <button id="predict-btn" onclick="predict()">Predict</button>
+
+  <div class="spinner" id="spinner"></div>
+
+  <div id="result">
+    <div class="verdict" id="verdict-text"></div>
+    <div class="prob" id="prob-text"></div>
+    <div class="bar-wrap"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<script>
+  const API = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : 'https://fraud-detection-api.onrender.com';  // ← update this after deploy
+
+  const FEATURES = [
+    'Time','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10',
+    'V11','V12','V13','V14','V15','V16','V17','V18','V19','V20',
+    'V21','V22','V23','V24','V25','V26','V27','V28','Amount'
+  ];
+
+  // Build input fields
+  const grid = document.getElementById('fields');
+  FEATURES.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.innerHTML = `<label>${f}</label><input type="number" step="any" id="f_${f}" placeholder="0" value="0"/>`;
+    grid.appendChild(div);
+  });
+
+  async function loadSample(type) {
+    const btn = document.getElementById(type === 'fraud' ? 'btn-fraud' : 'btn-normal');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const res = await fetch(`${API}/api/sample?type=${type}`);
+      const data = await res.json();
+      FEATURES.forEach(f => {
+        document.getElementById(`f_${f}`).value = data[f] ?? 0;
+      });
+      hideResult();
+    } catch(e) {
+      alert('Could not load sample: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = type === 'fraud' ? 'Load Fraud Transaction' : 'Load Normal Transaction';
+    }
+  }
+
+  function clearForm() {
+    FEATURES.forEach(f => document.getElementById(`f_${f}`).value = 0);
+    hideResult();
+  }
+
+  function hideResult() {
+    const r = document.getElementById('result');
+    r.style.display = 'none';
+    r.className = '';
+  }
+
+  async function predict() {
+    const btn = document.getElementById('predict-btn');
+    const spinner = document.getElementById('spinner');
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    hideResult();
+
+    const payload = {};
+    FEATURES.forEach(f => {
+      payload[f] = parseFloat(document.getElementById(`f_${f}`).value) || 0;
+    });
+
+    try {
+      const res = await fetch(`${API}/api/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showResult(data);
+    } catch(e) {
+      alert('Prediction failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  }
+
+  function showResult(data) {
+    const r = document.getElementById('result');
+    const isFraud = data.prediction === 1;
+    r.className = isFraud ? 'fraud' : 'legit';
+    r.style.display = 'block';
+    document.getElementById('verdict-text').textContent = isFraud ? '⚠️ FRAUDULENT' : '✅ LEGITIMATE';
+    document.getElementById('prob-text').textContent =
+      `Fraud probability: ${data.fraud_probability}%`;
+    document.getElementById('bar').style.width = data.fraud_probability + '%';
+  }
+</script>
+</body>
+</html>
