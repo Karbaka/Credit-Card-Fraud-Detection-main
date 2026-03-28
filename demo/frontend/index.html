@@ -1,276 +1,164 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Credit Card Fraud Detection</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 16px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #f8fafc;
-    }
-    header p {
-      color: #94a3b8;
-      margin-top: 6px;
-      font-size: 0.95rem;
-    }
-
-    .card {
-      background: #1e293b;
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 860px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-
-    .sample-btns {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 28px;
-    }
-    .sample-btns button {
-      flex: 1;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .sample-btns button:hover { opacity: 0.85; }
-    #btn-normal { background: #22c55e; color: #fff; }
-    #btn-fraud  { background: #ef4444; color: #fff; }
-    #btn-clear  { background: #475569; color: #fff; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 14px;
-      margin-bottom: 28px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 0.75rem;
-      color: #94a3b8;
-      margin-bottom: 4px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .field input {
-      width: 100%;
-      padding: 8px 10px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 6px;
-      color: #f1f5f9;
-      font-size: 0.85rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .field input:focus { border-color: #6366f1; }
-
-    #predict-btn {
-      width: 100%;
-      padding: 14px;
-      background: #6366f1;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    #predict-btn:hover { background: #4f46e5; }
-    #predict-btn:disabled { background: #334155; cursor: not-allowed; }
-
-    #result {
-      margin-top: 24px;
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-      display: none;
-    }
-    #result.fraud    { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; }
-    #result.legit    { background: rgba(34,197,94,0.15);  border: 1px solid #22c55e; }
-
-    #result .verdict {
-      font-size: 2rem;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-    #result.fraud .verdict { color: #ef4444; }
-    #result.legit .verdict { color: #22c55e; }
-
-    #result .prob {
-      font-size: 1rem;
-      color: #cbd5e1;
-    }
-
-    .bar-wrap {
-      margin-top: 16px;
-      background: #0f172a;
-      border-radius: 99px;
-      height: 10px;
-      overflow: hidden;
-    }
-    .bar-fill {
-      height: 100%;
-      border-radius: 99px;
-      transition: width 0.6s ease;
-    }
-    #result.fraud .bar-fill { background: #ef4444; }
-    #result.legit .bar-fill { background: #22c55e; }
-
-    .spinner {
-      display: none;
-      width: 22px; height: 22px;
-      border: 3px solid #334155;
-      border-top-color: #6366f1;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin: 0 auto;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Credit Card Fraud Detection</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 16px}
+header{text-align:center;margin-bottom:24px}
+header h1{font-size:2rem;font-weight:700;color:#f8fafc}
+header p{color:#94a3b8;margin-top:6px;font-size:.95rem}
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:900px;margin-bottom:20px}
+.stat-card{background:#1e293b;border-radius:12px;padding:16px 20px;border:1px solid #334155}
+.stat-label{font-size:.75rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.stat-value{font-size:1.6rem;font-weight:800;color:#f8fafc}
+.fraud-card .stat-value{color:#ef4444}
+.saved-card .stat-value{color:#22c55e}
+.rate-card .stat-value{color:#f59e0b}
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tab{padding:10px 28px;border-radius:8px;border:none;font-size:.95rem;font-weight:600;cursor:pointer;background:#1e293b;color:#94a3b8}
+.tab.active{background:#6366f1;color:#fff}
+.panel{display:none;width:100%;max-width:900px}
+.panel.active{display:block}
+.card{background:#1e293b;border-radius:16px;padding:32px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.sample-btns{display:flex;gap:12px;margin-bottom:28px}
+.sample-btns button{flex:1;padding:10px;border-radius:8px;border:none;font-size:.9rem;font-weight:600;cursor:pointer}
+#btn-normal{background:#22c55e;color:#fff}
+#btn-fraud{background:#ef4444;color:#fff}
+#btn-clear{background:#475569;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.field label{display:block;font-size:.75rem;color:#94a3b8;margin-bottom:4px;font-weight:600;text-transform:uppercase}
+.field input{width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:.85rem;outline:none}
+#predict-btn{width:100%;padding:14px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer}
+#predict-btn:disabled{background:#334155;cursor:not-allowed}
+#result{margin-top:24px;border-radius:12px;padding:24px;text-align:center;display:none}
+#result.fraud{background:rgba(239,68,68,.15);border:1px solid #ef4444}
+#result.legit{background:rgba(34,197,94,.15);border:1px solid #22c55e}
+#result .verdict{font-size:2rem;font-weight:800;margin-bottom:8px}
+#result.fraud .verdict{color:#ef4444}
+#result.legit .verdict{color:#22c55e}
+#result .prob{font-size:1rem;color:#cbd5e1}
+.bar-wrap{margin-top:16px;background:#0f172a;border-radius:99px;height:10px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s ease}
+#result.fraud .bar-fill{background:#ef4444}
+#result.legit .bar-fill{background:#22c55e}
+.stream-controls{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap}
+#stream-btn{padding:12px 32px;border-radius:8px;border:none;font-size:1rem;font-weight:700;cursor:pointer;background:#22c55e;color:#fff}
+#stream-btn.running{background:#ef4444}
+#speed-select{padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:.9rem}
+.speed-label{color:#94a3b8;font-size:.9rem}
+.pulse-wrap{display:flex;align-items:center;gap:8px}
+.pulse{width:10px;height:10px;border-radius:50%;background:#22c55e;display:none;animation:pulse 1s infinite}
+.pulse.active{display:block}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+#live-label{font-size:.85rem;color:#94a3b8}
+.current-txn{background:#0f172a;border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid #334155;min-height:80px;display:flex;align-items:center;justify-content:space-between;transition:border-color .3s}
+.current-txn.fraud-flash{border-color:#ef4444}
+.current-txn.legit-flash{border-color:#22c55e}
+.txn-info{font-size:.95rem;color:#cbd5e1}
+.txn-info span{color:#f8fafc;font-weight:700}
+.txn-badge{padding:8px 20px;border-radius:99px;font-weight:800;font-size:1rem;white-space:nowrap}
+.txn-badge.fraud{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444}
+.txn-badge.legit{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e}
+.txn-badge.pending{background:#1e293b;color:#94a3b8;border:1px solid #334155}
+#alert-banner{display:none;background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:10px;padding:14px 20px;margin-bottom:20px;color:#ef4444;font-weight:700}
+.log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.log-header h3{font-size:1rem;color:#94a3b8;font-weight:600}
+#clear-log{padding:6px 14px;background:#334155;border:none;border-radius:6px;color:#94a3b8;font-size:.8rem;cursor:pointer}
+.log-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.log-table th{text-align:left;padding:8px 12px;color:#64748b;font-weight:600;border-bottom:1px solid #334155}
+.log-table td{padding:10px 12px;border-bottom:1px solid #1e293b}
+.badge{padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700}
+.badge.fraud{background:rgba(239,68,68,.2);color:#ef4444}
+.badge.legit{background:rgba(34,197,94,.2);color:#22c55e}
+.log-empty{text-align:center;color:#475569;padding:24px;font-size:.9rem}
+.spinner{display:none;width:22px;height:22px;border:3px solid #334155;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-
 <header>
-  <h1>🔍 Credit Card Fraud Detection</h1>
-  <p>Random Forest model · 92% accuracy · Trained on 984 transactions</p>
+  <h1>Credit Card Fraud Detection</h1>
+  <p>Random Forest model - 92% accuracy - Trained on 284,807 real transactions</p>
 </header>
-
-<div class="card">
-  <div class="sample-btns">
-    <button id="btn-normal" onclick="loadSample('normal')">Load Normal Transaction</button>
-    <button id="btn-fraud"  onclick="loadSample('fraud')">Load Fraud Transaction</button>
-    <button id="btn-clear"  onclick="clearForm()">Clear</button>
-  </div>
-
-  <div class="grid" id="fields"></div>
-
-  <button id="predict-btn" onclick="predict()">Predict</button>
-
-  <div class="spinner" id="spinner"></div>
-
-  <div id="result">
-    <div class="verdict" id="verdict-text"></div>
-    <div class="prob" id="prob-text"></div>
-    <div class="bar-wrap"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+<div class="stats-bar">
+  <div class="stat-card"><div class="stat-label">Total Transactions</div><div class="stat-value" id="stat-total">0</div></div>
+  <div class="stat-card fraud-card"><div class="stat-label">Fraud Caught</div><div class="stat-value" id="stat-fraud">0</div></div>
+  <div class="stat-card saved-card"><div class="stat-label">Money Saved</div><div class="stat-value" id="stat-saved">$0</div></div>
+  <div class="stat-card rate-card"><div class="stat-label">Fraud Rate</div><div class="stat-value" id="stat-rate">0%</div></div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('manual')">Manual Predictor</button>
+  <button class="tab" onclick="switchTab('stream')">Live Stream</button>
+</div>
+<div class="panel active" id="panel-manual">
+  <div class="card">
+    <div class="sample-btns">
+      <button id="btn-normal" onclick="loadSample('normal')">Load Normal Transaction</button>
+      <button id="btn-fraud" onclick="loadSample('fraud')">Load Fraud Transaction</button>
+      <button id="btn-clear" onclick="clearForm()">Clear</button>
+    </div>
+    <div class="grid" id="fields"></div>
+    <button id="predict-btn" onclick="predict()">Predict</button>
+    <div class="spinner" id="spinner"></div>
+    <div id="result">
+      <div class="verdict" id="verdict-text"></div>
+      <div class="prob" id="prob-text"></div>
+      <div class="bar-wrap"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+    </div>
   </div>
 </div>
-
+<div class="panel" id="panel-stream">
+  <div class="card">
+    <div class="stream-controls">
+      <button id="stream-btn" onclick="toggleStream()">Start Stream</button>
+      <span class="speed-label">Speed:</span>
+      <select id="speed-select">
+        <option value="3000">Slow (3s)</option>
+        <option value="1500" selected>Normal (1.5s)</option>
+        <option value="700">Fast (0.7s)</option>
+      </select>
+      <div class="pulse-wrap">
+        <div class="pulse" id="pulse-dot"></div>
+        <span id="live-label">Stopped</span>
+      </div>
+    </div>
+    <div id="alert-banner"></div>
+    <div class="current-txn" id="current-txn">
+      <div class="txn-info" id="txn-info">Waiting for stream to start...</div>
+      <div class="txn-badge pending" id="txn-badge">-</div>
+    </div>
+    <div class="log-header">
+      <h3>Transaction Log</h3>
+      <button id="clear-log" onclick="clearLog()">Clear</button>
+    </div>
+    <table class="log-table">
+      <thead><tr><th>#</th><th>Time</th><th>Amount</th><th>Fraud Probability</th><th>Result</th></tr></thead>
+      <tbody id="log-body"><tr><td colspan="5" class="log-empty">No transactions yet - start the stream</td></tr></tbody>
+    </table>
+  </div>
+</div>
 <script>
-  const API = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000'
-    : 'https://fraud-detection-api-kdoc.onrender.com';
-
-  const FEATURES = [
-    'Time','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10',
-    'V11','V12','V13','V14','V15','V16','V17','V18','V19','V20',
-    'V21','V22','V23','V24','V25','V26','V27','V28','Amount'
-  ];
-
-  // Build input fields
-  const grid = document.getElementById('fields');
-  FEATURES.forEach(f => {
-    const div = document.createElement('div');
-    div.className = 'field';
-    div.innerHTML = `<label>${f}</label><input type="number" step="any" id="f_${f}" placeholder="0" value="0"/>`;
-    grid.appendChild(div);
-  });
-
-  async function loadSample(type) {
-    const btn = document.getElementById(type === 'fraud' ? 'btn-fraud' : 'btn-normal');
-    btn.disabled = true;
-    btn.textContent = 'Loading...';
-    try {
-      const res = await fetch(`${API}/api/sample?type=${type}`);
-      const data = await res.json();
-      FEATURES.forEach(f => {
-        document.getElementById(`f_${f}`).value = data[f] ?? 0;
-      });
-      hideResult();
-    } catch(e) {
-      alert('Could not load sample: ' + e.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = type === 'fraud' ? 'Load Fraud Transaction' : 'Load Normal Transaction';
-    }
-  }
-
-  function clearForm() {
-    FEATURES.forEach(f => document.getElementById(`f_${f}`).value = 0);
-    hideResult();
-  }
-
-  function hideResult() {
-    const r = document.getElementById('result');
-    r.style.display = 'none';
-    r.className = '';
-  }
-
-  async function predict() {
-    const btn = document.getElementById('predict-btn');
-    const spinner = document.getElementById('spinner');
-    btn.disabled = true;
-    spinner.style.display = 'block';
-    hideResult();
-
-    const payload = {};
-    FEATURES.forEach(f => {
-      payload[f] = parseFloat(document.getElementById(`f_${f}`).value) || 0;
-    });
-
-    try {
-      const res = await fetch(`${API}/api/predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      showResult(data);
-    } catch(e) {
-      alert('Prediction failed: ' + e.message);
-    } finally {
-      btn.disabled = false;
-      spinner.style.display = 'none';
-    }
-  }
-
-  function showResult(data) {
-    const r = document.getElementById('result');
-    const isFraud = data.prediction === 1;
-    r.className = isFraud ? 'fraud' : 'legit';
-    r.style.display = 'block';
-    document.getElementById('verdict-text').textContent = isFraud ? '⚠️ FRAUDULENT' : '✅ LEGITIMATE';
-    document.getElementById('prob-text').textContent =
-      `Fraud probability: ${data.fraud_probability}%`;
-    document.getElementById('bar').style.width = data.fraud_probability + '%';
-  }
+var API=window.location.origin;
+var FEATURES=['Time','V1','V2','V3','V4','V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19','V20','V21','V22','V23','V24','V25','V26','V27','V28','Amount'];
+var sTotal=0,sFraud=0,sSaved=0,streamInterval=null,txnCount=0;
+var grid=document.getElementById('fields');
+FEATURES.forEach(function(f){var d=document.createElement('div');d.className='field';d.innerHTML='<label>'+f+'</label><input type="number" step="any" id="f_'+f+'" value="0"/>';grid.appendChild(d);});
+function switchTab(t){document.querySelectorAll('.tab').forEach(function(x,i){x.classList.toggle('active',(i===0)===(t==='manual'));});document.getElementById('panel-manual').classList.toggle('active',t==='manual');document.getElementById('panel-stream').classList.toggle('active',t==='stream');}
+function updateStats(isFraud,amount){sTotal++;if(isFraud){sFraud++;sSaved+=amount;}document.getElementById('stat-total').textContent=sTotal;document.getElementById('stat-fraud').textContent=sFraud;document.getElementById('stat-saved').textContent='$'+sSaved.toFixed(2);document.getElementById('stat-rate').textContent=((sFraud/sTotal)*100).toFixed(1)+'%';}
+async function loadSample(type){var btn=document.getElementById(type==='fraud'?'btn-fraud':'btn-normal');btn.disabled=true;btn.textContent='Loading...';try{var r=await fetch(API+'/api/sample?type='+type);var d=await r.json();FEATURES.forEach(function(f){document.getElementById('f_'+f).value=d[f]!=null?d[f]:0;});hideResult();}catch(e){alert('Could not load sample: '+e.message);}finally{btn.disabled=false;btn.textContent=type==='fraud'?'Load Fraud Transaction':'Load Normal Transaction';}}
+function clearForm(){FEATURES.forEach(function(f){document.getElementById('f_'+f).value=0;});hideResult();}
+function hideResult(){var r=document.getElementById('result');r.style.display='none';r.className='';}
+async function predict(){var btn=document.getElementById('predict-btn'),sp=document.getElementById('spinner');btn.disabled=true;sp.style.display='block';hideResult();var payload={};FEATURES.forEach(function(f){payload[f]=parseFloat(document.getElementById('f_'+f).value)||0;});try{var r=await fetch(API+'/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});var d=await r.json();showResult(d,payload['Amount']);}catch(e){alert('Prediction failed: '+e.message);}finally{btn.disabled=false;sp.style.display='none';}}
+function showResult(data,amount){var r=document.getElementById('result'),isFraud=data.prediction===1;r.className=isFraud?'fraud':'legit';r.style.display='block';document.getElementById('verdict-text').textContent=isFraud?'FRAUDULENT':'LEGITIMATE';document.getElementById('prob-text').textContent='Fraud probability: '+data.fraud_probability+'%';document.getElementById('bar').style.width=data.fraud_probability+'%';updateStats(isFraud,parseFloat(amount)||0);}
+function toggleStream(){if(streamInterval)stopStream();else startStream();}
+function startStream(){var btn=document.getElementById('stream-btn');btn.textContent='Stop Stream';btn.classList.add('running');document.getElementById('pulse-dot').classList.add('active');document.getElementById('live-label').textContent='LIVE';var speed=parseInt(document.getElementById('speed-select').value);streamTick();streamInterval=setInterval(streamTick,speed);}
+function stopStream(){clearInterval(streamInterval);streamInterval=null;var btn=document.getElementById('stream-btn');btn.textContent='Start Stream';btn.classList.remove('running');document.getElementById('pulse-dot').classList.remove('active');document.getElementById('live-label').textContent='Stopped';}
+async function streamTick(){var type=Math.random()<0.15?'fraud':'normal';try{var sr=await fetch(API+'/api/sample?type='+type);var sample=await sr.json();var pr=await fetch(API+'/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sample)});var result=await pr.json();txnCount++;var isFraud=result.prediction===1,amount=parseFloat(sample.Amount)||0,time=new Date().toLocaleTimeString();document.getElementById('txn-info').innerHTML='Transaction <span>#'+txnCount+'</span> - Amount: <span>$'+amount.toFixed(2)+'</span>';var badge=document.getElementById('txn-badge');badge.textContent=isFraud?'FRAUD':'LEGIT';badge.className='txn-badge '+(isFraud?'fraud':'legit');document.getElementById('current-txn').className='current-txn '+(isFraud?'fraud-flash':'legit-flash');var banner=document.getElementById('alert-banner');if(isFraud){banner.textContent='FRAUD DETECTED - Transaction #'+txnCount+' flagged! $'+amount.toFixed(2)+' - Probability: '+result.fraud_probability+'%';banner.style.display='block';clearTimeout(banner._t);banner._t=setTimeout(function(){banner.style.display='none';},4000);}updateStats(isFraud,amount);addLogRow(txnCount,time,amount,result.fraud_probability,isFraud);}catch(e){console.error('Stream error:',e);}}
+function addLogRow(num,time,amount,prob,isFraud){var tbody=document.getElementById('log-body');var empty=tbody.querySelector('.log-empty');if(empty)empty.parentElement.remove();var tr=document.createElement('tr');tr.innerHTML='<td style="color:#64748b">'+num+'</td><td>'+time+'</td><td>$'+amount.toFixed(2)+'</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;background:#0f172a;border-radius:99px;height:6px;overflow:hidden"><div style="width:'+prob+'%;height:100%;background:'+(isFraud?'#ef4444':'#22c55e')+';border-radius:99px"></div></div><span style="font-size:.8rem;color:#94a3b8;min-width:36px">'+prob+'%</span></div></td><td><span class="badge '+(isFraud?'fraud':'legit')+'">'+(isFraud?'FRAUD':'LEGIT')+'</span></td>';tbody.insertBefore(tr,tbody.firstChild);while(tbody.rows.length>50)tbody.deleteRow(tbody.rows.length-1);}
+function clearLog(){txnCount=0;sTotal=0;sFraud=0;sSaved=0;document.getElementById('stat-total').textContent='0';document.getElementById('stat-fraud').textContent='0';document.getElementById('stat-saved').textContent='$0';document.getElementById('stat-rate').textContent='0%';document.getElementById('log-body').innerHTML='<tr><td colspan="5" class="log-empty">No transactions yet - start the stream</td></tr>';document.getElementById('current-txn').className='current-txn';document.getElementById('txn-info').textContent='Waiting for stream to start...';document.getElementById('txn-badge').className='txn-badge pending';document.getElementById('txn-badge').textContent='-';document.getElementById('alert-banner').style.display='none';}
 </script>
 </body>
 </html>
