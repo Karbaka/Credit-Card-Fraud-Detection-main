@@ -9,16 +9,50 @@ import random
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
 
-BASE = os.path.dirname(__file__)
+BASE = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(BASE, 'model.pkl'), 'rb') as f:
-    model = pickle.load(f)
+# Load samples
+with open(os.path.join(BASE, 'samples.json')) as f:
+    samples = json.load(f)
 
 with open(os.path.join(BASE, 'features.json')) as f:
     features = json.load(f)
 
-with open(os.path.join(BASE, 'samples.json')) as f:
-    samples = json.load(f)
+# Load or retrain model
+def load_model():
+    pkl_path = os.path.join(BASE, 'model.pkl')
+    try:
+        with open(pkl_path, 'rb') as f:
+            m = pickle.load(f)
+        print("Model loaded from pkl")
+        return m
+    except Exception as e:
+        print(f"pkl load failed ({e}), retraining...")
+        return retrain_model(pkl_path)
+
+def retrain_model(pkl_path):
+    import pandas as pd
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
+
+    # Build training data from samples
+    normal = samples['normal']
+    fraud  = samples['fraud']
+    all_samples = normal + fraud
+
+    X = [[s[f] for f in features] for s in all_samples]
+    y = [s['Class'] for s in all_samples]
+
+    X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2, random_state=42)
+    m = RandomForestClassifier(criterion='entropy', n_estimators=50, random_state=42)
+    m.fit(X_train, y_train)
+
+    with open(pkl_path, 'wb') as f:
+        pickle.dump(m, f)
+    print("Model retrained and saved")
+    return m
+
+model = load_model()
 
 
 @app.route('/')
